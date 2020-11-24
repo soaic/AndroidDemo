@@ -1,13 +1,24 @@
 package com.soaic.javalib;
 
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ExecutorsTest {
+
+    private volatile int count;
+    private AtomicInteger count1;
 
     public static void main(String[] arg) {
 
@@ -16,7 +27,7 @@ public class ExecutorsTest {
         //newThreadFactory();
         //newExecutorCached();
         //newCallable();
-
+        testThreadPool();
     }
 
     private static void newExecutorCached() {
@@ -87,6 +98,40 @@ public class ExecutorsTest {
         };
         threadFactory.newThread(runnable).start();
 
+    }
+
+
+    public static void testThreadPool() {
+//        SynchronousQueue<Runnable> blockingQueue = new SynchronousQueue<>();
+//        LinkedBlockingQueue<Runnable> blockingQueue = new LinkedBlockingQueue<>();
+        ArrayBlockingQueue<Runnable> blockingQueue = new ArrayBlockingQueue<>(2);
+        ThreadPoolExecutor threadPoolExecutor =
+                new ThreadPoolExecutor(3, 4, 60, TimeUnit.SECONDS, blockingQueue, new ThreadFactory() {
+                    int count = 1;
+                    @Override
+                    public Thread newThread(Runnable runnable) {
+                        return new Thread(runnable, "thread name " + count++);
+                    }
+                });
+
+        Runnable run = new Runnable() {
+            @Override
+            public void run() {
+                String threadName = Thread.currentThread().getName();
+                System.out.println(threadName+"start!");
+                try{
+                    Thread.sleep(5000);
+                }catch (Exception e){
+
+                }
+            }
+        };
+        threadPoolExecutor.execute(run);
+        threadPoolExecutor.execute(run);
+        threadPoolExecutor.execute(run);
+        threadPoolExecutor.execute(run);
+        threadPoolExecutor.execute(run);
+        threadPoolExecutor.shutdown();
     }
 
 
